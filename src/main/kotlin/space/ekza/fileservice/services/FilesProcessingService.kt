@@ -2,24 +2,36 @@ package space.ekza.fileservice.services
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import org.springframework.web.multipart.MultipartFile
+import space.ekza.fileservice.config.FileConvertingProperties
+import space.ekza.fileservice.dto.FileProcessingResponse
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.UUID
 
 @Service
-class FilesProcessingService {
+class FilesProcessingService(
+    private val fileConvertingProperties: FileConvertingProperties
+) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(FilesProcessingService::class.java)
     }
 
-    fun process() {
+    fun process(file: MultipartFile): FileProcessingResponse {
 
         val suffix = UUID.randomUUID().toString()
-        val fileName = "test-result-$suffix.glb"
+        val rawFileName = "${file.name}-$suffix.fbx"
+        val convertedFileName = "${file.name}-result-$suffix.glb"
+
+        val path = Path.of("${fileConvertingProperties.rawFilesFolder}/$rawFileName")
+        Files.createFile(path)
+        file.transferTo(path)
 
         val nativeProcessBuilder = ProcessBuilder(
-            "/Users/rh/Downloads/FBX2glTF-darwin-x64",
-            "--input", "/Users/rh/Downloads/test.fbx",
-            "--output", "/Users/rh/Downloads/$fileName"
+            fileConvertingProperties.converterPath,
+            "--input", "$path",
+            "--output", "${fileConvertingProperties.convertedFilesFolder}/$convertedFileName"
         )
         val startedProcess = nativeProcessBuilder.start()
 
@@ -30,5 +42,6 @@ class FilesProcessingService {
 
         //Files.delete(Path.of("/Users/rh/Downloads/$fileName"))
 
+        return FileProcessingResponse.success();
     }
 }
