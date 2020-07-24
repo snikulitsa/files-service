@@ -1,3 +1,14 @@
+server:
+  servlet:
+    context-path: /api/file-service
+
 spring:
-  webflux:
-    base-path: /api/file-service
+  servlet:
+    multipart:
+      max-file-size: 25MB
+
+file-converting:
+  converterPath: "${HOME}/Downloads/FBX2glTF-darwin-x64"
+  rawFilesFolder: "${HOME}/Downloads/raw"
+  convertedFilesFolder: "${HOME}/Downloads/converted"
+
