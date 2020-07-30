@@ -12,3 +12,8 @@ file-converting:
   rawFilesFolder: "${HOME}/Downloads/raw"
   convertedFilesFolder: "${HOME}/Downloads/converted"
 
+amazon:
+  s3:
+    bucket: "ekza"
+    accessKey: ${AMAZON_S3_ACCESS_KEY}
+    secretKey: ${AMAZON_S3_SECRET_KEY}
