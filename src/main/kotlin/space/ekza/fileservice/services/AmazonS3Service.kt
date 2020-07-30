@@ -19,31 +19,34 @@ class AmazonS3Service(
     private val idGenerator: IdGenerator
 ) {
 
-    fun savePublic(file: ByteArray, rootUuid: String, extension: String): AmazonS3File {
-        val key = "${rootUuid}_${idGenerator.generate()}.$extension"
+    fun publish(file: ByteArray, rootUuid: String, extension: String): AmazonS3File {
+        val uuid = idGenerator.generate()
+        val key = "${rootUuid}_$uuid.$extension"
+        logger.info("File saving to amazon: $key")
         save(key, file)
         allowReadAccessToAll(key)
         val url = awsS3Client.getUrl(properties.bucket, key).toExternalForm()
-        val amazonS3File = AmazonS3File(
+        return AmazonS3File(
+            uuid = idGenerator.generate(),
             key = key,
             bucket = properties.bucket,
             url = url
-        )
-        logger.info("File saved to amazon: $amazonS3File")
-        return amazonS3File
+        ).also { logger.info("File saved to amazon: $key") }
     }
 
     private fun save(key: String, file: ByteArray): PutObjectResult = awsS3Client.putObject(
         properties.bucket,
         key,
         ByteArrayInputStream(file),
-        ObjectMetadata()
+        ObjectMetadata().apply { contentLength = file.size.toLong() }
     )
 
     private fun allowReadAccessToAll(key: String) {
+        logger.info("Allowing public read access to file: $key")
         val objectAcl = awsS3Client.getObjectAcl(properties.bucket, key)
         objectAcl.grantPermission(GroupGrantee.AllUsers, Permission.Read)
         awsS3Client.setObjectAcl(properties.bucket, key, objectAcl)
+        logger.info("Public read access to file allowed: $key")
     }
 
     companion object {
