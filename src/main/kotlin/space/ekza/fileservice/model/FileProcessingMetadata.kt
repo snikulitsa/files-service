@@ -1,6 +1,6 @@
 package space.ekza.fileservice.model
 
-data class FileProcessingPreparationMetadata (
+data class FileProcessingMetadata (
     val fileUUID: String,
     val originalFileName: String,
     val originalFileExtension: String,

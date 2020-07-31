@@ -5,33 +5,38 @@ import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 import space.ekza.fileservice.config.FileConvertingProperties
 import space.ekza.fileservice.model.ConvertedFile
-import space.ekza.fileservice.model.FileProcessingPreparationMetadata
+import space.ekza.fileservice.model.FileProcessingMetadata
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 
 @Component
 class FileConverter(
     private val fileConvertingProperties: FileConvertingProperties
 ) {
 
-    fun convert(multipartFile: MultipartFile, metadata: FileProcessingPreparationMetadata): ConvertedFile {
+    fun convert(
+        multipartFile: MultipartFile,
+        metadata: FileProcessingMetadata
+    ): CompletableFuture<ConvertedFile> = CompletableFuture.supplyAsync {
         saveOriginalTemporaryFileToConvertingFolder(metadata, multipartFile)
         convertFile(metadata)
         logger.info("Converting file ${metadata.pathToTemporaryOriginalFile} process FINISHED")
-        return ConvertedFile(
+        ConvertedFile(
             uuid = metadata.fileUUID,
             originalData = multipartFile.bytes,
             convertedData = Files.readAllBytes(Path.of(metadata.pathToTemporaryConvertedFile))
         )
     }
 
-    fun cleanUp(metadata: FileProcessingPreparationMetadata) {
+    fun cleanUp(metadata: FileProcessingMetadata) {
+        logger.info("Cleanup: $metadata")
         Files.delete(Path.of(metadata.pathToTemporaryOriginalFile))
         Files.delete(Path.of(metadata.pathToTemporaryConvertedFile))
     }
 
     private fun saveOriginalTemporaryFileToConvertingFolder(
-        metadata: FileProcessingPreparationMetadata,
+        metadata: FileProcessingMetadata,
         multipartFile: MultipartFile
     ) {
         val path = Path.of(metadata.pathToTemporaryOriginalFile)
@@ -40,7 +45,7 @@ class FileConverter(
         logger.info("Temporary file: ${metadata.pathToTemporaryOriginalFile} saved to converting folder")
     }
 
-    private fun convertFile(metadata: FileProcessingPreparationMetadata) {
+    private fun convertFile(metadata: FileProcessingMetadata) {
         val nativeProcessBuilder = ProcessBuilder(
             fileConvertingProperties.converterPath,
             INPUT_COMMAND_ARG, metadata.pathToTemporaryOriginalFile,

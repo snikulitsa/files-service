@@ -3,7 +3,7 @@ package space.ekza.fileservice.services
 import org.springframework.stereotype.Component
 import org.springframework.web.multipart.MultipartFile
 import space.ekza.fileservice.config.FileConvertingProperties
-import space.ekza.fileservice.model.FileProcessingPreparationMetadata
+import space.ekza.fileservice.model.FileProcessingMetadata
 import space.ekza.fileservice.util.IdGenerator
 
 @Component
@@ -11,7 +11,7 @@ class FileProcessingPreparer(
     private val fileConvertingProperties: FileConvertingProperties,
     private val idGenerator: IdGenerator
 ) {
-    fun prepare(multipartFile: MultipartFile): FileProcessingPreparationMetadata {
+    fun prepare(multipartFile: MultipartFile): FileProcessingMetadata {
 
         val uuid = idGenerator.generate()
         val fullOriginalFileName = multipartFile.originalFilename!!
@@ -24,7 +24,7 @@ class FileProcessingPreparer(
         val pathToTemporaryConvertedFile = with(fileConvertingProperties) {
             "$convertedFilesFolder/$originalFileName-result-$uuid.$targetExtension"
         }
-        return FileProcessingPreparationMetadata(
+        return FileProcessingMetadata(
             fileUUID = uuid,
             originalFileName = originalFileName,
             originalFileExtension = originalFileExtension,

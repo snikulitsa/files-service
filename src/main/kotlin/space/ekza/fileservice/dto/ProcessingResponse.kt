@@ -1,5 +1,6 @@
 package space.ekza.fileservice.dto
 
+import space.ekza.fileservice.dto.ProcessingStatus.ACCEPTED
 import space.ekza.fileservice.dto.ProcessingStatus.ERROR
 import space.ekza.fileservice.dto.ProcessingStatus.SUCCESS
 
@@ -9,6 +10,7 @@ data class ProcessingResponse (
 ) {
     companion object {
         fun success() = ProcessingResponse(status = SUCCESS)
+        fun accepted() = ProcessingResponse(status = ACCEPTED)
         fun error(message: String) = ProcessingResponse(status = ERROR, message = message)
     }
 }
