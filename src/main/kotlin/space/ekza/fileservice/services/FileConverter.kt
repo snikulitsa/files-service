@@ -30,6 +30,7 @@ class FileConverter(
         return convertedFile
     }
 
+    // TODO fixme: textures cleanup
     private fun cleanUp(metadata: FileProcessingMetadata) {
         logger.info("Cleanup: $metadata")
         Files.delete(Path.of(metadata.pathToTemporaryOriginalFile))

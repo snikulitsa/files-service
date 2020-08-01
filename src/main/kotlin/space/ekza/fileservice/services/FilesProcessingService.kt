@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import space.ekza.fileservice.dto.ProcessingResponse
+import space.ekza.fileservice.entity.RootFileEntity
 import space.ekza.fileservice.mappers.FileMapper
 import space.ekza.fileservice.model.AmazonS3File
 import space.ekza.fileservice.model.ConvertedFile
@@ -23,6 +24,8 @@ class FilesProcessingService(
 
     fun process(multipartFile: MultipartFile): ProcessingResponse = try {
 
+        //TODO process file that don't need to be converted
+        //TODO adding files to existing file
         val processingMetadata = fileProcessingPreparer.prepare(multipartFile)
         val convertedFile = fileConverter.convert(multipartFile, processingMetadata)
 
@@ -39,15 +42,17 @@ class FilesProcessingService(
                     original = originalS3File.await(),
                     renderReady = convertedS3File.await()
                 )
-                databasePersistenceService.save(fileEntity)
+                saveToDatabase(fileEntity)
             }.join()
         }
 
         ProcessingResponse.accepted(fileUuid = processingMetadata.fileUUID)
     } catch (ex: Exception) {
         logger.error(ex.message, ex)
-        ProcessingResponse.error(message = ex.message ?: "")
+        ProcessingResponse.error(message = "Error occurred while processing a file")
     }
+
+    private suspend fun saveToDatabase(fileEntity: RootFileEntity) = databasePersistenceService.save(fileEntity)
 
     private suspend fun publishConverted(
         convertedFile: ConvertedFile,

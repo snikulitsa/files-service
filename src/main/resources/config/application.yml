@@ -5,7 +5,12 @@ server:
 spring:
   servlet:
     multipart:
-      max-file-size: 25MB
+      max-file-size: 10MB
+  data:
+    mongodb:
+      host: ${MONGO_DB_HOST:localhost}
+      port: ${MONGO_DB_PORT:27017}
+      database: ekza-files
 
 file-converting:
   converterPath: "${HOME}/Downloads/FBX2glTF-darwin-x64"
