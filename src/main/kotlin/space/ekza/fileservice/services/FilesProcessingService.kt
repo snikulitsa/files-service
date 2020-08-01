@@ -25,7 +25,6 @@ class FilesProcessingService(
 
         val processingMetadata = fileProcessingPreparer.prepare(multipartFile)
         val convertedFile = fileConverter.convert(multipartFile, processingMetadata)
-        fileConverter.cleanUp(processingMetadata)
 
         GlobalScope.launch {
             val originalS3File = async {
@@ -44,7 +43,7 @@ class FilesProcessingService(
             }.join()
         }
 
-        ProcessingResponse.accepted()
+        ProcessingResponse.accepted(fileUuid = processingMetadata.fileUUID)
     } catch (ex: Exception) {
         logger.error(ex.message, ex)
         ProcessingResponse.error(message = ex.message ?: "")
