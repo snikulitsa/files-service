@@ -1,11 +1,16 @@
 package space.ekza.fileservice.services
 
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import space.ekza.fileservice.dto.ProcessingResponse
 import space.ekza.fileservice.mappers.FileMapper
-import java.util.concurrent.CompletableFuture.supplyAsync
+import space.ekza.fileservice.model.AmazonS3File
+import space.ekza.fileservice.model.ConvertedFile
+import space.ekza.fileservice.model.FileProcessingMetadata
 
 @Service
 class FilesProcessingService(
@@ -18,39 +23,49 @@ class FilesProcessingService(
 
     fun process(multipartFile: MultipartFile): ProcessingResponse = try {
 
-            val processingMetadata = fileProcessingPreparer.prepare(multipartFile)
-            val convertedFile = fileConverter.convert(multipartFile, processingMetadata).get()
-            fileConverter.cleanUp(processingMetadata)
+        val processingMetadata = fileProcessingPreparer.prepare(multipartFile)
+        val convertedFile = fileConverter.convert(multipartFile, processingMetadata)
 
-            val originalS3File = supplyAsync {
-                amazonS3Service.publish(
-                    file = convertedFile.originalData,
-                    rootUuid = processingMetadata.fileUUID,
-                    extension = processingMetadata.originalFileExtension
-                )
+        GlobalScope.launch {
+            val originalS3File = async {
+                publishOriginal(convertedFile, processingMetadata)
             }
-            val convertedS3File = supplyAsync {
-                amazonS3Service.publish(
-                    file = convertedFile.convertedData,
-                    rootUuid = processingMetadata.fileUUID,
-                    extension = processingMetadata.targetFileExtension
-                )
+            val convertedS3File = async {
+                publishConverted(convertedFile, processingMetadata)
             }
-
-            supplyAsync {
+            async {
                 val fileEntity = fileMapper.toEntity(
                     rootUuid = processingMetadata.fileUUID,
-                    original = originalS3File.get(),
-                    renderReady = convertedS3File.get()
+                    original = originalS3File.await(),
+                    renderReady = convertedS3File.await()
                 )
                 databasePersistenceService.save(fileEntity)
-            }
+            }.join()
+        }
 
-        ProcessingResponse.accepted()
+        ProcessingResponse.accepted(fileUuid = processingMetadata.fileUUID)
     } catch (ex: Exception) {
         logger.error(ex.message, ex)
         ProcessingResponse.error(message = ex.message ?: "")
     }
+
+    private suspend fun publishConverted(
+        convertedFile: ConvertedFile,
+        processingMetadata: FileProcessingMetadata
+    ): AmazonS3File = amazonS3Service.publish(
+        file = convertedFile.convertedData,
+        rootUuid = processingMetadata.fileUUID,
+        extension = processingMetadata.targetFileExtension
+    )
+
+    private suspend fun publishOriginal(
+        convertedFile: ConvertedFile,
+        processingMetadata: FileProcessingMetadata
+    ): AmazonS3File = amazonS3Service.publish(
+        file = convertedFile.originalData,
+        rootUuid = processingMetadata.fileUUID,
+        extension = processingMetadata.originalFileExtension
+    )
 
     companion object {
         private val logger = LoggerFactory.getLogger(FilesProcessingService::class.java)

@@ -8,7 +8,6 @@ import space.ekza.fileservice.model.ConvertedFile
 import space.ekza.fileservice.model.FileProcessingMetadata
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
 
 @Component
 class FileConverter(
@@ -18,18 +17,20 @@ class FileConverter(
     fun convert(
         multipartFile: MultipartFile,
         metadata: FileProcessingMetadata
-    ): CompletableFuture<ConvertedFile> = CompletableFuture.supplyAsync {
+    ): ConvertedFile {
         saveOriginalTemporaryFileToConvertingFolder(metadata, multipartFile)
         convertFile(metadata)
-        logger.info("Converting file ${metadata.pathToTemporaryOriginalFile} process FINISHED")
-        ConvertedFile(
+        val convertedFile = ConvertedFile(
             uuid = metadata.fileUUID,
             originalData = multipartFile.bytes,
             convertedData = Files.readAllBytes(Path.of(metadata.pathToTemporaryConvertedFile))
         )
+        logger.info("Converting file ${metadata.pathToTemporaryOriginalFile} process FINISHED")
+        cleanUp(metadata)
+        return convertedFile
     }
 
-    fun cleanUp(metadata: FileProcessingMetadata) {
+    private fun cleanUp(metadata: FileProcessingMetadata) {
         logger.info("Cleanup: $metadata")
         Files.delete(Path.of(metadata.pathToTemporaryOriginalFile))
         Files.delete(Path.of(metadata.pathToTemporaryConvertedFile))
