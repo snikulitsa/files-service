@@ -11,12 +11,14 @@ class FileMapper {
     fun toEntity(rootUuid: String, original: AmazonS3File, renderReady: AmazonS3File) = RootFileEntity(
         uuid = rootUuid,
         originalFile = FileEntity(
-            uuid = original.key,
+            uuid = original.uuid,
+            key = original.key,
             url = original.url,
             bucket = original.bucket
         ),
         renderReadyFile = FileEntity(
-            uuid = renderReady.key,
+            uuid = renderReady.uuid,
+            key = renderReady.key,
             url = renderReady.url,
             bucket = renderReady.bucket
         )

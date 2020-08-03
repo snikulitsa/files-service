@@ -3,13 +3,18 @@ package space.ekza.fileservice.services
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import space.ekza.fileservice.entity.RootFileEntity
+import space.ekza.fileservice.repository.FilesRepository
 
 @Service
-class FileDatabasePersistenceService {
+class FileDatabasePersistenceService(
+    private val filesRepository: FilesRepository
+) {
 
+    // TODO move MongoDB integration to other microservice with REST/RABBIT/KAFKA api
     fun save(file: RootFileEntity) {
         logger.info("Persisting file to database: $file")
-        //TODO save to MongoDB
+        filesRepository.save(file)
+        logger.info("File persisted to database:  $file")
     }
 
     companion object {
