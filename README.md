@@ -1,5 +1,5 @@
 # Files processing service
 
-* install java 11
-* start service with
-`% ./gradlew bootRun`
+* Converting FBX to gITF with [FBX2glTF](https://github.com/facebookincubator/FBX2glTF)
+* Uploading results to Amazon S3
+* Saving metadata to MongoDB
