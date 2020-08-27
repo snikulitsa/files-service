@@ -1,1 +1,1 @@
-rootProject.name = "fileservice"
+rootProject.name = "files-service"
